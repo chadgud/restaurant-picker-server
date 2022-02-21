@@ -7,7 +7,7 @@ dotenv.config({ path: './.env' });
 const app = express();
 
 const corsOptions = {
-    origin: 'https://frosty-franklin-cbd13f.netlify.app',
+    origin: ['https://frosty-franklin-cbd13f.netlify.app', 'https://dinnerdecider.chadgud.dev', 'http://localhost:3000'],
     optionsSuccessStatus: 200
 }
 
