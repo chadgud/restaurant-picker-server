@@ -12,9 +12,8 @@ const corsOptions = {
 }
 
 app.use('/', cors(corsOptions), (req, res, next) => {
-    const { lat, lon } = req.query;
-
-    const reqConfig = {
+    const { lat, lon, location } = req.query;
+    let fourSquareReqConfig = {
         method: 'get',
         headers: {
             Accept: 'application.json',
@@ -22,21 +21,55 @@ app.use('/', cors(corsOptions), (req, res, next) => {
         },
         params: {
             ll: `${parseFloat(lat).toFixed(4)},${parseFloat(lon).toFixed(4)}`,
-            radius: '11265',
+            radius: '16094',
             categories: '13065',
             fields: 'name,location,categories,distance,tel,website,hours,rating,price,photos',
             sort: 'distance',
             limit: 25
         }
     };
+    const mapboxReqConfig = {
+        method: 'get',
+        headers: {
+            Accept: 'application.json'
+        },
+        params: {
+            limit: 1,
+            types: 'place,postcode,address,poi',
+            access_token: process.env.MAPBOX_TOKEN
+        }
+    };
+    let latitude;
+    let longitude;
 
-    axios.get('https://api.foursquare.com/v3/places/search', reqConfig)
-        .then((response) => {
-            res.json(response.data);
-        })
-        .catch((err) => {
-            res.send(err);
-        });
+    if (location) {
+        axios.get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(location)}.json`, mapboxReqConfig)
+            .then((resp) => {
+                longitude = resp.data.features[0].center[0];
+                latitude = resp.data.features[0].center[1];
+                fourSquareReqConfig.params.ll = `${latitude},${longitude}`;
+                console.log(`${latitude},${longitude}`);
+                axios.get('https://api.foursquare.com/v3/places/search', fourSquareReqConfig)
+                    .then((response) => {
+                        res.json(response.data);
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                    });
+            }).catch((err) => {
+                console.log(err);
+            });
+    } else {
+        axios.get('https://api.foursquare.com/v3/places/search', fourSquareReqConfig)
+            .then((response) => {
+                res.json(response.data);
+            })
+            .catch((err) => {
+                console.log(err);
+            });
+    };
+
+
 
 });
 
